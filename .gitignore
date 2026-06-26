@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+
+# Google サービスアカウント鍵
+backend/credentials/*.json
+
+# Node / Vite
+node_modules/
+frontend/dist/
+.DS_Store
