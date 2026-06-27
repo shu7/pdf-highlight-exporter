@@ -106,6 +106,34 @@ PDF はメモリ上で処理され、サーバーに保存されません。
 
 ---
 
+## デプロイ（無料で公開する）
+
+このリポジトリには `Dockerfile`（フロントをビルドしてバックエンドから配信）と
+`render.yaml`（Render 用設定）が含まれています。
+
+### Render で公開（おすすめ・無料枠あり）
+
+1. <https://render.com> にGitHubアカウントでサインイン
+2. 「New +」→「Blueprint」→ このリポジトリ（`shu7/pdf-highlight-exporter`）を選択
+3. `render.yaml` が読み込まれ、Docker でビルド＆デプロイされる
+4. 数分後に `https://<name>.onrender.com` で誰でもアクセス可能
+
+> 無料プランは一定時間アクセスがないとスリープし、次回アクセス時に起動に数十秒かかります。
+> Google Sheets 連携を使う場合のみ環境変数 `GOOGLE_SPREADSHEET_ID` 等を設定してください
+> （未設定でも Excel ダウンロードは動作します）。
+
+### ローカルで Docker 実行
+
+```bash
+docker build -t pdf-highlight-exporter .
+docker run -p 8000:8000 pdf-highlight-exporter
+# http://localhost:8000
+```
+
+Fly.io / Google Cloud Run など他の Docker 対応PaaSでも同じ `Dockerfile` で動きます。
+
+---
+
 ## ライセンスに関する注意（重要）
 
 本プロジェクトのバックエンドは **PyMuPDF (`fitz`)** を使用しています。

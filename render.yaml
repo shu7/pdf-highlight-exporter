@@ -1,0 +1,17 @@
+# Render（https://render.com）用デプロイ設定。
+# リポジトリを連携し「Blueprint」からこのファイルを読み込むと自動で作成される。
+services:
+  - type: web
+    name: pdf-highlight-exporter
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # Google Sheets 連携を使う場合のみ設定（未設定でも Excel 出力は動作）
+      - key: GOOGLE_SPREADSHEET_ID
+        sync: false
+      # サービスアカウントJSONの中身を貼り付ける場合に使用（任意）
+      - key: GOOGLE_SA_KEY_PATH
+        value: ./credentials/service_account.json

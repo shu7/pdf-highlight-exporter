@@ -108,6 +108,15 @@ export default function App() {
         <span className="text-xs text-blue-100">
           投資リサーチ向け・ハイライト抽出 → Excel / Google Sheets
         </span>
+        <a
+          href="https://github.com/shu7/pdf-highlight-exporter"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-auto text-xs text-blue-100 underline hover:text-white"
+          title="AGPL-3.0：ソースコードを公開しています"
+        >
+          ソースコード (AGPL-3.0)
+        </a>
       </header>
 
       <div className="flex min-h-0 flex-1">
