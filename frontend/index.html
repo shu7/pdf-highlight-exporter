@@ -5,6 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PDF ハイライト エクスポーター</title>
     <!-- PDF.js は PdfViewer.jsx 内で CDN から動的 import します -->
+
+    <!--
+      Cloudflare Web Analytics（Cookieレス・プライバシー配慮・無料）
+      使い方:
+        1. https://dash.cloudflare.com/ → Analytics & Logs → Web Analytics
+        2. 公開URL（例: pdf-highlight-exporter.onrender.com）を「Add a site」で登録
+        3. 発行される token を下の YOUR_CLOUDFLARE_TOKEN と差し替え
+        4. 再ビルド＆再デプロイ
+      ※ token がプレースホルダのままでも実害はありません（計測されないだけ）。
+    -->
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "YOUR_CLOUDFLARE_TOKEN"}'
+    ></script>
   </head>
   <body>
     <div id="root"></div>
