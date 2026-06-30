@@ -13,7 +13,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-function SortableItem({ item, index, onNoteChange, onDelete }) {
+function SortableItem({ item, index, onNoteChange, onDelete, t }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id })
 
@@ -35,7 +35,7 @@ function SortableItem({ item, index, onNoteChange, onDelete }) {
           {...attributes}
           {...listeners}
           className="mt-0.5 cursor-grab select-none px-1 text-gray-400 hover:text-gray-600 active:cursor-grabbing"
-          title="ドラッグで並び替え"
+          title={t.dragReorder}
         >
           ⠿
         </button>
@@ -58,7 +58,7 @@ function SortableItem({ item, index, onNoteChange, onDelete }) {
             type="text"
             value={item.note || ''}
             onChange={(e) => onNoteChange(item.id, e.target.value)}
-            placeholder="メモを追加…"
+            placeholder={t.notePlaceholder}
             className="mt-2 w-full rounded border border-gray-200 px-2 py-1 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           />
         </div>
@@ -66,7 +66,7 @@ function SortableItem({ item, index, onNoteChange, onDelete }) {
         <button
           onClick={() => onDelete(item.id)}
           className="px-1 text-gray-300 hover:text-red-500"
-          title="削除"
+          title={t.deleteTitle}
         >
           ✕
         </button>
@@ -80,6 +80,7 @@ export default function HighlightList({
   onReorder,
   onNoteChange,
   onDelete,
+  t,
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } })
@@ -97,9 +98,9 @@ export default function HighlightList({
   if (highlights.length === 0) {
     return (
       <p className="px-2 py-8 text-center text-sm text-gray-400">
-        ハイライトはまだありません。
+        {t.emptyList1}
         <br />
-        PDF を読み込むか、本文を選択して追加してください。
+        {t.emptyList2}
       </p>
     )
   }
@@ -122,6 +123,7 @@ export default function HighlightList({
               index={index}
               onNoteChange={onNoteChange}
               onDelete={onDelete}
+              t={t}
             />
           ))}
         </ul>

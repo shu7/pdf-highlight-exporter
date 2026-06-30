@@ -16,12 +16,13 @@ function loadPdfjs() {
   return pdfjsPromise
 }
 
-export default function PdfViewer({ file, onRegionSelected, busy }) {
+export default function PdfViewer({ file, onRegionSelected, busy, t }) {
   const containerRef = useRef(null)
   const bandRef = useRef(null) // ラバーバンド（選択矩形）DOM
   const dragRef = useRef(null) // { wrapper, startX, startY }
   const onRegionRef = useRef(onRegionSelected)
   const scaleRef = useRef(1.3)
+  const tRef = useRef(t)
 
   const [status, setStatus] = useState('idle') // idle | loading | ready | error
   const [errorMsg, setErrorMsg] = useState('')
@@ -29,6 +30,15 @@ export default function PdfViewer({ file, onRegionSelected, busy }) {
 
   onRegionRef.current = onRegionSelected
   scaleRef.current = scale
+  tRef.current = t
+
+  // 言語切替時、既に描画済みの「ページ取り込み」ボタンの文言を更新
+  useEffect(() => {
+    const btns = containerRef.current?.querySelectorAll('.page-import-btn')
+    btns?.forEach((b) => {
+      b.textContent = t.importPageBtn
+    })
+  }, [t])
 
   // ---- レンダリング（キャンバスのみ。テキストレイヤーは使わない＝回転ズレを回避）----
   useEffect(() => {
@@ -76,7 +86,7 @@ export default function PdfViewer({ file, onRegionSelected, busy }) {
           const btn = document.createElement('button')
           btn.type = 'button'
           btn.className = 'page-import-btn'
-          btn.textContent = '▦ このページの表を全部取り込む'
+          btn.textContent = tRef.current.importPageBtn
           btn.addEventListener('mousedown', (ev) => ev.stopPropagation())
           btn.addEventListener('click', (ev) => {
             ev.stopPropagation()
@@ -97,7 +107,7 @@ export default function PdfViewer({ file, onRegionSelected, busy }) {
       } catch (err) {
         if (!cancelled) {
           console.error(err)
-          setErrorMsg('PDF の表示に失敗しました: ' + (err?.message || err))
+          setErrorMsg(tRef.current.viewerErrorPrefix + (err?.message || err))
           setStatus('error')
         }
       }
@@ -179,7 +189,7 @@ export default function PdfViewer({ file, onRegionSelected, busy }) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 border-b bg-white px-3 py-2 text-sm">
-        <span className="font-medium text-gray-700">表示倍率</span>
+        <span className="font-medium text-gray-700">{t.zoom}</span>
         <button
           className="rounded border px-2 py-0.5 hover:bg-gray-100"
           onClick={() => setScale((s) => Math.max(0.4, +(s - 0.2).toFixed(1)))}
@@ -194,20 +204,16 @@ export default function PdfViewer({ file, onRegionSelected, busy }) {
           ＋
         </button>
         <span className="ml-auto text-xs text-gray-400">
-          {busy
-            ? '表を再構成中…'
-            : '表を四角く囲んで選択（縮小すると全体を一度に囲めます）'}
+          {busy ? t.hintBusy : t.hintSelect}
         </span>
       </div>
 
       <div className="relative flex-1 overflow-auto bg-gray-200 p-4">
         {status === 'idle' && (
-          <p className="mt-10 text-center text-gray-500">
-            右上から PDF をアップロードしてください。
-          </p>
+          <p className="mt-10 text-center text-gray-500">{t.viewerIdle}</p>
         )}
         {status === 'loading' && (
-          <p className="mt-10 text-center text-gray-500">PDF を読み込み中…</p>
+          <p className="mt-10 text-center text-gray-500">{t.viewerLoading}</p>
         )}
         {status === 'error' && (
           <p className="mt-10 text-center text-red-600">{errorMsg}</p>

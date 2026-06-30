@@ -1,0 +1,87 @@
+// 多言語UI文言（外部ライブラリ不使用）。
+// App 側で言語stateを持ち、t = translations[lang] を各コンポーネントへ渡す。
+
+export const translations = {
+  ja: {
+    htmlLang: 'ja',
+    docTitle: 'PDF ハイライト エクスポーター',
+    appTitle: 'PDF ハイライト エクスポーター',
+    appSubtitle: '投資リサーチ向け・ハイライト抽出 → Excel / Google Sheets',
+    sourceCode: 'ソースコード (AGPL-3.0)',
+    sourceCodeTitle: 'AGPL-3.0：ソースコードを公開しています',
+    switchTo: 'English', // このボタンを押すと切り替わる言語名
+    dropPdf: 'PDF をドラッグ＆ドロップ',
+    orClick: 'またはクリックして選択',
+    extracting: '既存ハイライトを抽出中…',
+    highlightsHeading: (n) => `ハイライト一覧（${n}）`,
+    clearAll: 'すべて削除',
+    sheetIdLabel: 'Google スプレッドシート ID（任意・未入力時は .env の値を使用）',
+    sheetIdPlaceholder: '例: 1AbC...xyz',
+    zoom: '表示倍率',
+    hintBusy: '表を再構成中…',
+    hintSelect: '表を四角く囲んで選択（縮小すると全体を一度に囲めます）',
+    importPageBtn: '▦ このページの表を全部取り込む',
+    viewerIdle: '右上から PDF をアップロードしてください。',
+    viewerLoading: 'PDF を読み込み中…',
+    viewerErrorPrefix: 'PDF の表示に失敗しました: ',
+    dragReorder: 'ドラッグで並び替え',
+    notePlaceholder: 'メモを追加…',
+    deleteTitle: '削除',
+    emptyList1: 'ハイライトはまだありません。',
+    emptyList2: 'PDF を読み込むか、表を選択して追加してください。',
+    exportNoHighlights: 'エクスポートするハイライトがありません。',
+    exportBtn: 'エクスポート（Excel + Google Sheets）',
+    exporting: 'エクスポート中…',
+    exportSuccess: 'Excel をダウンロードし、Google Sheets に追記しました。',
+    exportExcelOnly: 'Excel をダウンロードしました。',
+    exportFailed: 'エクスポートに失敗しました。',
+    errPdfOnly: 'PDF ファイルを選択してください。',
+    errExtract: 'ハイライト抽出に失敗しました。',
+    errTable: '表の再構成に失敗しました。',
+  },
+  en: {
+    htmlLang: 'en',
+    docTitle: 'PDF Highlight Exporter',
+    appTitle: 'PDF Highlight Exporter',
+    appSubtitle: 'For investment research · Highlight extraction → Excel / Google Sheets',
+    sourceCode: 'Source code (AGPL-3.0)',
+    sourceCodeTitle: 'AGPL-3.0: source code is published',
+    switchTo: '日本語',
+    dropPdf: 'Drag & drop a PDF',
+    orClick: 'or click to select',
+    extracting: 'Extracting existing highlights…',
+    highlightsHeading: (n) => `Highlights (${n})`,
+    clearAll: 'Clear all',
+    sheetIdLabel: 'Google Spreadsheet ID (optional; uses .env value if blank)',
+    sheetIdPlaceholder: 'e.g. 1AbC...xyz',
+    zoom: 'Zoom',
+    hintBusy: 'Reconstructing table…',
+    hintSelect: 'Draw a box around a table to import it (zoom out to capture it all at once)',
+    importPageBtn: '▦ Import all tables on this page',
+    viewerIdle: 'Upload a PDF from the top right.',
+    viewerLoading: 'Loading PDF…',
+    viewerErrorPrefix: 'Failed to display PDF: ',
+    dragReorder: 'Drag to reorder',
+    notePlaceholder: 'Add a note…',
+    deleteTitle: 'Delete',
+    emptyList1: 'No highlights yet.',
+    emptyList2: 'Upload a PDF, or select a table to add rows.',
+    exportNoHighlights: 'No highlights to export.',
+    exportBtn: 'Export (Excel + Google Sheets)',
+    exporting: 'Exporting…',
+    exportSuccess: 'Downloaded Excel and appended to Google Sheets.',
+    exportExcelOnly: 'Downloaded Excel.',
+    exportFailed: 'Export failed.',
+    errPdfOnly: 'Please select a PDF file.',
+    errExtract: 'Failed to extract highlights.',
+    errTable: 'Failed to reconstruct the table.',
+  },
+}
+
+// ブラウザ言語と localStorage から初期言語を決める
+export function detectLang() {
+  const saved = typeof localStorage !== 'undefined' && localStorage.getItem('lang')
+  if (saved === 'ja' || saved === 'en') return saved
+  const nav = (typeof navigator !== 'undefined' && navigator.language) || 'ja'
+  return nav.toLowerCase().startsWith('ja') ? 'ja' : 'en'
+}

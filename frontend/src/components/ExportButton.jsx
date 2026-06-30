@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { downloadExcel, exportHighlights } from '../api/client'
 
-export default function ExportButton({ highlights, filename, spreadsheetId }) {
+export default function ExportButton({ highlights, filename, spreadsheetId, lang, t }) {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState(null) // { type: 'success'|'warn'|'error', text }
 
   async function handleExport() {
     if (highlights.length === 0) {
-      setMessage({ type: 'error', text: 'エクスポートするハイライトがありません。' })
+      setMessage({ type: 'error', text: t.exportNoHighlights })
       return
     }
     setBusy(true)
@@ -26,26 +26,24 @@ export default function ExportButton({ highlights, filename, spreadsheetId }) {
         highlights: payload,
         filename: filename || 'highlights.pdf',
         spreadsheetId,
+        lang,
       })
 
       // Excel をダウンロード
       await downloadExcel(result.excel_url, result.excel_filename)
 
       if (result.sheets_url) {
-        setMessage({
-          type: 'success',
-          text: 'Excel をダウンロードし、Google Sheets に追記しました。',
-        })
+        setMessage({ type: 'success', text: t.exportSuccess })
       } else {
         setMessage({
           type: 'warn',
           text:
-            'Excel をダウンロードしました。' +
-            (result.sheets_error ? ` （${result.sheets_error}）` : ''),
+            t.exportExcelOnly +
+            (result.sheets_error ? ` (${result.sheets_error})` : ''),
         })
       }
     } catch (err) {
-      setMessage({ type: 'error', text: err.message || 'エクスポートに失敗しました。' })
+      setMessage({ type: 'error', text: err.message || t.exportFailed })
     } finally {
       setBusy(false)
     }
@@ -64,7 +62,7 @@ export default function ExportButton({ highlights, filename, spreadsheetId }) {
         disabled={busy}
         className="w-full rounded-lg bg-brand px-4 py-2.5 font-semibold text-white shadow hover:bg-[#163a5c] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {busy ? 'エクスポート中…' : 'エクスポート（Excel + Google Sheets）'}
+        {busy ? t.exporting : t.exportBtn}
       </button>
       {message && (
         <p className={`text-xs ${colorMap[message.type]}`}>{message.text}</p>

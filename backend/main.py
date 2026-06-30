@@ -17,7 +17,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 import fitz
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
@@ -45,6 +45,62 @@ app.add_middleware(
 _EXCEL_CACHE: dict[str, dict] = {}
 
 
+# ---------- メッセージの多言語化（Accept-Language で ja / en を選択）----------
+_MSG = {
+    "pdf_required": {
+        "ja": "PDF ファイルを指定してください。",
+        "en": "Please provide a PDF file.",
+    },
+    "file_empty": {"ja": "ファイルが空です。", "en": "The file is empty."},
+    "parse_failed": {
+        "ja": "PDF の解析に失敗しました: {exc}",
+        "en": "Failed to parse the PDF: {exc}",
+    },
+    "pdf_open_failed": {
+        "ja": "PDF を開けませんでした: {exc}",
+        "en": "Failed to open the PDF: {exc}",
+    },
+    "page_range": {
+        "ja": "ページ番号が範囲外です。",
+        "en": "Page number is out of range.",
+    },
+    "table_failed": {
+        "ja": "表の再構成に失敗しました: {exc}",
+        "en": "Failed to reconstruct the table: {exc}",
+    },
+    "no_highlights": {
+        "ja": "エクスポートするハイライトがありません。",
+        "en": "No highlights to export.",
+    },
+    "excel_failed": {
+        "ja": "Excel の生成に失敗しました: {exc}",
+        "en": "Failed to generate the Excel file: {exc}",
+    },
+    "sheets_failed": {
+        "ja": "Google Sheets への追記に失敗しました: {exc}",
+        "en": "Failed to append to Google Sheets: {exc}",
+    },
+    "sheets_skipped": {
+        "ja": "スプレッドシート ID が未設定のため Google Sheets 連携をスキップしました。",
+        "en": "No spreadsheet ID is set, so Google Sheets sync was skipped.",
+    },
+    "download_expired": {
+        "ja": "ファイルが見つからないか期限切れです。",
+        "en": "File not found or has expired.",
+    },
+}
+
+
+def _lang(request: Request) -> str:
+    al = (request.headers.get("accept-language") or "").lower()
+    return "en" if al.startswith("en") else "ja"
+
+
+def _t(key: str, lang: str, **kw) -> str:
+    s = _MSG[key][lang]
+    return s.format(**kw) if kw else s
+
+
 # ---------- スキーマ ----------
 class Highlight(BaseModel):
     text: str
@@ -62,19 +118,20 @@ class ExportRequest(BaseModel):
 
 # ---------- エンドポイント ----------
 @app.post("/api/extract-highlights")
-async def extract_highlights_endpoint(file: UploadFile = File(...)):
+async def extract_highlights_endpoint(request: Request, file: UploadFile = File(...)):
+    lang = _lang(request)
     if not file.filename or not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="PDF ファイルを指定してください。")
+        raise HTTPException(status_code=400, detail=_t("pdf_required", lang))
 
     pdf_bytes = await file.read()
     if not pdf_bytes:
-        raise HTTPException(status_code=400, detail="ファイルが空です。")
+        raise HTTPException(status_code=400, detail=_t("file_empty", lang))
 
     try:
         highlights = extract_highlights(pdf_bytes)
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(
-            status_code=500, detail=f"PDF の解析に失敗しました: {exc}"
+            status_code=500, detail=_t("parse_failed", lang, exc=exc)
         ) from exc
 
     return {"highlights": highlights}
@@ -82,6 +139,7 @@ async def extract_highlights_endpoint(file: UploadFile = File(...)):
 
 @app.post("/api/extract-table")
 async def extract_table_endpoint(
+    request: Request,
     file: UploadFile = File(...),
     page: int = Form(...),
     x0: float = Form(...),
@@ -93,25 +151,30 @@ async def extract_table_endpoint(
 
     Response: { rows: [[cell, ...], ...] }  ※先頭セルがラベル列
     """
+    lang = _lang(request)
     if not file.filename or not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="PDF ファイルを指定してください。")
+        raise HTTPException(status_code=400, detail=_t("pdf_required", lang))
 
     pdf_bytes = await file.read()
     try:
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=400, detail=f"PDF を開けませんでした: {exc}") from exc
+        raise HTTPException(
+            status_code=400, detail=_t("pdf_open_failed", lang, exc=exc)
+        ) from exc
 
     try:
         if page < 1 or page > doc.page_count:
-            raise HTTPException(status_code=400, detail="ページ番号が範囲外です。")
+            raise HTTPException(status_code=400, detail=_t("page_range", lang))
         pdf_page = doc.load_page(page - 1)
         bbox = (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
         rows = reconstruct_table(pdf_page, bbox)
     except HTTPException:
         raise
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=500, detail=f"表の再構成に失敗しました: {exc}") from exc
+        raise HTTPException(
+            status_code=500, detail=_t("table_failed", lang, exc=exc)
+        ) from exc
     finally:
         doc.close()
 
@@ -119,9 +182,10 @@ async def extract_table_endpoint(
 
 
 @app.post("/api/export")
-async def export_endpoint(req: ExportRequest):
+async def export_endpoint(req: ExportRequest, request: Request):
+    lang = _lang(request)
     if not req.highlights:
-        raise HTTPException(status_code=400, detail="エクスポートするハイライトがありません。")
+        raise HTTPException(status_code=400, detail=_t("no_highlights", lang))
 
     highlights = [h.model_dump() for h in req.highlights]
 
@@ -130,7 +194,7 @@ async def export_endpoint(req: ExportRequest):
         excel_bytes = build_excel(highlights, req.filename)
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(
-            status_code=500, detail=f"Excel の生成に失敗しました: {exc}"
+            status_code=500, detail=_t("excel_failed", lang, exc=exc)
         ) from exc
 
     file_id = uuid.uuid4().hex
@@ -148,9 +212,9 @@ async def export_endpoint(req: ExportRequest):
         except SheetsConfigError as exc:
             sheets_error = str(exc)
         except Exception as exc:  # noqa: BLE001
-            sheets_error = f"Google Sheets への追記に失敗しました: {exc}"
+            sheets_error = _t("sheets_failed", lang, exc=exc)
     else:
-        sheets_error = "スプレッドシート ID が未設定のため Google Sheets 連携をスキップしました。"
+        sheets_error = _t("sheets_skipped", lang)
 
     return {
         "excel_url": excel_url,
@@ -161,10 +225,10 @@ async def export_endpoint(req: ExportRequest):
 
 
 @app.get("/api/download/{file_id}")
-async def download_endpoint(file_id: str):
+async def download_endpoint(file_id: str, request: Request):
     entry = _EXCEL_CACHE.pop(file_id, None)
     if entry is None:
-        raise HTTPException(status_code=404, detail="ファイルが見つからないか期限切れです。")
+        raise HTTPException(status_code=404, detail=_t("download_expired", _lang(request)))
 
     return Response(
         content=entry["data"],
